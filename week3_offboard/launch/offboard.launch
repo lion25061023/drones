@@ -1,0 +1,8 @@
+<launch>
+    <!-- PX4 SITL + Gazebo + MAVROS 三件套 -->
+    <include file="$(find px4)/launch/mavros_posix_sitl.launch"/>
+
+    <!-- 自己的 offboard 控制节点 -->
+    <node name="offboard_node" pkg="week3_offboard"
+          type="offboard_node.py" output="screen"/>
+</launch>

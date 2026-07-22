@@ -1,0 +1,21 @@
+# Simple drone materials
+newmtl body
+Ka 0.2 0.0 0.0
+Kd 0.9 0.1 0.1
+Ks 0.3 0.3 0.3
+Ns 50.0
+d 1.0
+
+newmtl arms
+Ka 0.1 0.1 0.1
+Kd 0.4 0.4 0.4
+Ks 0.2 0.2 0.2
+Ns 30.0
+d 1.0
+
+newmtl rotors
+Ka 0.0 0.0 0.2
+Kd 0.1 0.3 0.9
+Ks 0.2 0.2 0.2
+Ns 30.0
+d 1.0
