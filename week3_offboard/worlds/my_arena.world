@@ -1,0 +1,142 @@
+<!-- 版本定义，不管 -->
+<?xml version="1.0" ?>
+<sdf version="1.5">
+  <!-- 这里开始定义一个世界，名字叫 default -->
+  <world name="default">
+    <!-- 全局方向光源，模拟太阳光照 -->
+    <!-- include 是引用模型的意思，model://sun 具体路径通过 GAZEBO_MODEL_PATH 环境变量找到 -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+    <!-- 地面（带纹理平地） -->
+    <!-- model://ground_plane 给世界加入地面 -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+    <!-- 柏油路面 -->
+    <include>
+      <uri>model://asphalt_plane</uri>
+    </include>
+    <!-- 这里规定了物理引擎的参数，gazebo 默认使用 ODE 物理引擎 -->
+    <physics name='default_physics' default='0' type='ode'>
+      <!-- 定义了重力加速度，单位 m/s^2，z 轴向下为负 -->
+      <gravity>0 0 -9.8066</gravity>
+      <!-- 这里定义了 ODE 物理引擎的参数，主要是求解器和约束参数 -->
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>10</iters>
+          <sor>1.3</sor>
+          <use_dynamic_moi_rescaling>0</use_dynamic_moi_rescaling>
+        </solver>
+        <constraints>
+          <cfm>0</cfm>
+          <erp>0.2</erp>
+          <contact_max_correcting_vel>100</contact_max_correcting_vel>
+          <contact_surface_layer>0.001</contact_surface_layer>
+        </constraints>
+      </ode>
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>250</real_time_update_rate>
+      <magnetic_field>6.0e-6 2.3e-5 -4.2e-5</magnetic_field>
+    </physics>
+
+    <!-- 地标1：红色柱子 @ (3, 0) -->
+    <model name='red_pillar'>
+      <static>1</static>
+      <pose>3 0 0.5 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <cylinder><radius>0.2</radius><length>1.0</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder><radius>0.2</radius><length>1.0</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>1 0 0 1</ambient>
+            <diffuse>1 0 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 地标2：绿色箱子 @ (0, 3) -->
+    <model name='green_box'>
+      <static>1</static>
+      <pose>0 3 0.25 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box><size>0.5 0.5 0.5</size></box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box><size>0.5 0.5 0.5</size></box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient>
+            <diffuse>0 1 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 地标3：蓝色高塔 @ (-3, 0) -->
+    <model name='blue_tower'>
+      <static>1</static>
+      <pose>-3 0 1.0 0 0 0</pose>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <cylinder><radius>0.25</radius><length>2.0</length></cylinder>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <cylinder><radius>0.25</radius><length>2.0</length></cylinder>
+          </geometry>
+          <material>
+            <ambient>0 0 1 1</ambient>
+            <diffuse>0 0 1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 地标4：黄色球体 @ (0, -3) -->
+    <model name='yellow_sphere'>
+      <static>1</static>
+      <pose>1 1 0.3 0 0 0</pose>
+      <link name= 'yellow_sphere'>
+        <collision name = 'collision'>
+          <geometry>
+            <sphere><radius>0.3</radius></sphere>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <sphere><radius>0.3</radius></sphere>
+          </geometry>
+          <!--
+            material 标签定义颜色，格式为 RGBA（红 绿 蓝 透明度），范围 0~1：
+              1 0 0 1 = 红    0 1 0 1 = 绿    0 0 1 1 = 蓝
+              1 1 0 1 = 黄    1 0 1 1 = 紫    0 1 1 1 = 青
+              1 1 1 1 = 白    0 0 0 1 = 黑
+            ambient：环境光反射色（暗面颜色）
+            diffuse：漫反射色（被光直射时的主体颜色，Gazebo 里最直观的就是这个）
+          -->
+          <material>
+            <ambient>1 1 0 1</ambient>
+            <diffuse>1 1 0 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+  </world>
+</sdf>

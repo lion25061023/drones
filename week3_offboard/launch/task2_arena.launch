@@ -1,0 +1,18 @@
+<launch>
+    <!--
+        思路：把 PX4 官方的三件套启动拿来，只改一样东西——
+        Gazebo 加载的世界换成我自己写的 my_arena.world
+
+        mavros_posix_sitl.launch 内部做了三件事：
+          ① 启动 Gazebo（加载 world 参数指定的世界）
+          ② 启动 PX4 SITL（软件在环仿真）
+          ③ 启动 MAVROS（ROS ↔ MAVLink 桥接）
+
+        $(find px4)：ROS 自动定位 px4 包的路径
+        arg world：PX4 官方 launch 预留的参数，默认是空白世界，这里传自己的进去
+        $(find week3_offboard)：定位自己的包路径，指向 worlds/my_arena.world
+    -->
+    <include file="$(find px4)/launch/mavros_posix_sitl.launch">
+        <arg name="world" value="$(find week3_offboard)/worlds/my_arena.world"/>
+    </include>
+</launch>

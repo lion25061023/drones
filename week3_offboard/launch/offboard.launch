@@ -1,8 +1,21 @@
 <launch>
+    <!--
+        vs task2_arena.launch：那个只启仿真环境（看世界对不对），
+        这个在仿真之上还启动了控制节点（直接飞）。
+
+        做的事：
+          ① include 官方 launch → 启 Gazebo + PX4 SITL + MAVROS
+          ② node           → 启自己的 offboard 控制节点
+
+        注意：这里没传 world 参数，mavros_posix_sitl.launch 会用默认空白世界。
+              如果要加载自定义世界，加上 <arg name="world" value="..."/> 即可。
+    -->
+
     <!-- PX4 SITL + Gazebo + MAVROS 三件套 -->
     <include file="$(find px4)/launch/mavros_posix_sitl.launch"/>
 
     <!-- 自己的 offboard 控制节点 -->
+    <!-- pkg=包名，type=可执行文件名，output="screen"=日志打到终端上 -->
     <node name="offboard_node" pkg="week3_offboard"
           type="offboard_node.py" output="screen"/>
 </launch>
