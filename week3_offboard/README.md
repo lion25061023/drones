@@ -248,3 +248,117 @@ rosrun week3_offboard offboard_node.py
 ```
 
 成功起飞，完成正方形航线，降落。
+
+---
+
+## 任务2：自定义世界 + 巡视航线
+
+### 搭建自定义世界
+
+PX4 官方有空白世界的模板，直接拷贝一份改：
+
+```bash
+cd /workspace/catkin_ws/src/week3_offboard
+mkdir -p worlds bags launch
+cp /workspace/PX4-Autopilot/Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/empty.world \
+   worlds/my_arena.world
+```
+
+然后在里面手写障碍物——三个地标（红柱子、绿箱子、蓝高塔）+ 一个小黄球。详细的世界搭建笔记见语雀：https://www.yuque.com/gongbutangjuan-c3v0z/lkf0qn/emcgixtr8nbfq6gh
+
+### 创建巡视节点
+
+代码主体直接复用任务1的 offboard_node，改动不大：
+
+```bash
+cd /workspace/catkin_ws/src/week3_offboard/scripts
+cp offboard_node.py survey_node.py
+chmod +x survey_node.py
+```
+
+相比任务1，改了几处：
+
+| 改动 | 说明 |
+|------|------|
+| 航点列表 | 目标点改成三个地标外侧 (3.5,0)、(0,3.5)、(-3.5,0)，往外让了 0.5m 防止撞柱 |
+| 节点名 | `offboard_node` → `survey_node`，防止两个节点重名冲突 |
+| 注释 | docstring、日志里的描述都改成巡视相关 |
+| 悬停 | 每个巡视点加了 2s 停留，不然一到点误差小于 0.3 立刻飞下一站，很不稳定 |
+
+### 跑起来 + 录 rosbag
+
+```bash
+# 终端1：启动仿真 + 巡视节点
+roslaunch week3_offboard task2_arena.launch
+
+# 终端2：无人机开始起飞时开始录 bag
+# 录三类数据：位置（画轨迹图用）、速度（算运动状态用）、飞控状态
+rosbag record \
+  /mavros/local_position/pose \
+  /mavros/local_position/velocity_body \
+  /mavros/state \
+  -O ~/bags/survey.bag
+```
+
+`rosbag record` 会把这三条话题上的所有消息原封不动存下来，跑完后用 Python + matplotlib 画轨迹图。
+
+### 巡视航线
+
+```
+起飞 2m → 悬停 5s → 三个地标外侧各悬停 2s → 返回降落
+
+          绿色箱子 (0, 3.5)
+              │
+              │
+  蓝塔 ←─────┼──────→ 红柱
+(-3.5, 0)    │     (3.5, 0)
+              │
+          起飞点 (0, 0)
+```
+
+### 到达误差
+
+阈值 0.3m，比比赛要求的 0.5m 更严格：
+
+```
+[INFO] 到达 巡视点1-红柱外侧，实际误差 0.024 m (< 0.5m 达标)
+[INFO] 到达 巡视点2-绿箱外侧，实际误差 0.134 m (< 0.5m 达标)
+[INFO] 到达 巡视点3-蓝塔外侧，实际误差 0.096 m (< 0.5m 达标)
+```
+
+**最大误差 0.134m，远优于 0.5m 要求。**
+
+### 轨迹图分析
+
+跑完 bag 后用 matplotlib 画了 trajectory.png：
+
+![飞行轨迹图](bags/trajectory.png)
+
+暴露三个现象：
+
+#### 1. 巡航高度系统性偏高（+0.15m）
+
+目标高度 2m，实际巡航在 2.0~2.3m 波动。
+
+**原因：** PX4 位置控制器的超调——切航点时有向上的速度惯性，控制器纠偏需要一个过程。这是正常现象。
+
+**改善方向：** 调 `MPC_Z_P`（高度环 P 增益），但会牺牲响应速度。+0.15m 在安全范围内，当前参数足够。
+
+#### 2. WP2（绿箱）附近的小弯钩
+
+轨迹在绿箱巡视点不是干净地到点就拐，而是冲过去一点再兜回来。
+
+**原因：** 0.3m 阈值判到达 → 立刻切下一目标 → 水平惯性让它多冲了 10~20cm 才被控制器拉回来。**WP2 误差 0.134m 不是"没到点"，而是"冲过了点"。**
+
+#### 3. 终点偏差约 0.1m
+
+降落点距原点约 (-0.1, 0.1)。AUTO.LAND 的低空地面效应 + 侧风扰动，10cm 偏差完全正常。
+
+### 任务2 小结
+
+| 指标 | 数值 | 判定 |
+|------|------|------|
+| 最大到点误差 | 0.134m | < 0.5m ✓ |
+| 高度偏差 | +0.15m | 控制器超调，正常 |
+| 终点偏移 | ~0.1m | 地面效应，可接受 |
+| 全部 3 个巡视点 | 到达 | 航线完整执行 |

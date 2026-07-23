@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Offboard 控制节点：起飞2m -> 悬停5s -> 正方形4点 -> 返回起点 -> 降落
+Survey 巡视节点：起飞2m -> 悬停5s -> 绕三个地标巡视 -> 返回起点 -> 降落
 异常处理：未连接不arm / 模式切换重试 / 位置误差过大悬停 / Ctrl+C安全退出
 """
 
@@ -87,7 +87,7 @@ def dist_to(target):
 
 def main():
     #初始化节点，取名叫 'offboard_node'，并设置循环频率为20Hz
-    rospy.init_node('offboard_node')
+    rospy.init_node('survey_node')  # 节点名改成 survey_node，避免和 offboard_node 重名冲突
     #这里为什么要循环，是因为在offboard模式下，飞控要求持续接收设定点，否则会自动退出offboard模式。20Hz的频率可以保证设定点的连续性，同时也满足了飞控对频率的要求（大于2Hz）。
     #rate就是一个实例化后的对象
     rate = rospy.Rate(20)   # 20Hz > 2Hz 要求
@@ -193,16 +193,17 @@ def main():
 
     # ---------- 航线：起飞 -> 悬停 -> 正方形 -> 返回 ----------
     waypoints = [
-        ((0, 0, 2), "起飞到2m"),
-        ((0, 0, 2), "悬停5s", 5.0),      # 同一点停留5秒
-        ((2, 0, 2), "正方形 点1"),
-        ((2, 2, 2), "正方形 点2"),
-        ((0, 2, 2), "正方形 点3"),
-        ((0, 0, 2), "返回起点"),
-    ]
+    ((0, 0, 2), "起飞到2m"),
+    ((0, 0, 2), "悬停5s", 5.0),
+    ((3.5, 0, 2), "巡视点1-红柱外侧", 2.0),
+    ((0, 3.5, 2), "巡视点2-绿箱外侧", 2.0),
+    ((-3.5, 0, 2), "巡视点3-蓝塔外侧", 2.0),
+    ((0, 0, 2), "返回起点"),
+    ]  
     # 这里的 waypoints 是一个列表，包含了每个航点的坐标、名称和悬停时间（可选）。每个航点是一个元组，元组的第一个元素是一个三元组，表示 (x, y, z) 坐标；第二个元素是航点的名称；第三个元素是悬停时间（如果有的话）。
     for wp in waypoints:
         xyz, name = wp[0], wp[1]
+        #悬停时间，如果元组长度大于2，则取第三个元素作为悬停时间，否则默认为0.0
         hover_time = wp[2] if len(wp) > 2 else 0.0
 
         target.pose.position.x, target.pose.position.y, target.pose.position.z = xyz
@@ -221,8 +222,9 @@ def main():
             elif err < 0.3:
                 if arrive_time is None:
                     arrive_time = rospy.Time.now()
-                    rospy.loginfo(f"到达 {name}")
-                # 到达后需要悬停的话，掐表
+                    rospy.loginfo(f"到达 {name}，实际误差 {err:.3f} m (< 0.5m 达标)")
+                    # 0.3m 判定阈值比比赛规则的 0.5m 更严格，天然满足要求
+                # 到达后需要悬停的话，掐表 ，这里就是卡着不让循环退出，直到悬停时间到达
                 if (rospy.Time.now() - arrive_time).to_sec() >= hover_time:
                     break
             rate.sleep()

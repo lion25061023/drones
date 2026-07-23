@@ -15,4 +15,8 @@
     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
         <arg name="world" value="$(find week3_offboard)/worlds/my_arena.world"/>
     </include>
+
+    <!-- 自己的巡视控制节点 -->
+    <node name="survey_node" pkg="week3_offboard"
+          type="survey_node.py" output="screen"/>
 </launch>
